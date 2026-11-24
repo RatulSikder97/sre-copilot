@@ -1,0 +1,70 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: lint, types, tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv python install 3.12
+      - run: uv sync --locked
+      - name: ruff
+        run: |
+          uv run ruff check src tests
+          uv run ruff format --check src tests
+      - name: mypy
+        run: uv run mypy
+      - name: pytest (offline: scripted LLM + recorded fixtures, no API key, no cluster)
+        run: uv run pytest
+      - name: offline replay of the recorded incidents
+        run: |
+          make replay SCENARIO=crashloop
+          make replay SCENARIO=oom
+
+  e2e:
+    name: e2e on kind (replay model, live tools)
+    runs-on: ubuntu-latest
+    needs: check
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv python install 3.12
+      - run: uv sync --locked
+      - uses: helm/kind-action@v1.12.0
+        with:
+          cluster_name: sre-copilot
+          config: deploy/kind/cluster.yaml
+          wait: 120s
+      - name: deploy Prometheus, Loki, sample app, RBAC
+        run: make demo-up
+      - name: crashloop incident -> webhook -> investigate -> propose -> approve -> verify
+        run: make demo-run SCENARIO=crashloop MODE=replay
+      - name: report
+        if: always()
+        run: |
+          cat .demo/report-crashloop.md || true
+          tail -n 100 .demo/server-crashloop.log || true
+      - name: cluster state on failure
+        if: failure()
+        run: |
+          export KUBECONFIG=.demo/admin.kubeconfig
+          kubectl get pods -A -o wide || true
+          kubectl -n demo get events --sort-by=.lastTimestamp || true
