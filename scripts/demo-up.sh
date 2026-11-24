@@ -42,8 +42,15 @@ for image in "${IMAGES[@]}"; do
       sleep 5
     done
   fi
-  docker save --platform "$PLATFORM" "$image" \
-    | docker exec -i "$NODE" ctr -n k8s.io images import --digests --snapshotter=overlayfs - >/dev/null
+  # `kind load` works with the classic Docker image store; the single-platform `docker save`
+  # path handles Docker Desktop's containerd store, where `kind load` can fail on multi-arch
+  # images. If both fail the node pulls the image itself.
+  if ! kind load docker-image --name "$CLUSTER" "$image" >/dev/null 2>&1; then
+    docker save --platform "$PLATFORM" "$image" \
+      | docker exec -i "$NODE" ctr -n k8s.io images import --digests --snapshotter=overlayfs - \
+        >/dev/null 2>&1 \
+      || echo "warning: could not preload $image; the node will pull it" >&2
+  fi
 done
 
 echo "==> deploying observability stack, sample app and RBAC"
