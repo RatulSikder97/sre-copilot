@@ -1,0 +1,142 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: demo
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: checkout-code
+  namespace: demo
+data:
+  app.py: |
+    """Tiny 'checkout' service with fault-injection knobs (config validation, memory leak)."""
+    import http.server
+    import json
+    import os
+    import sys
+    import threading
+    import time
+
+    VERSION = os.environ.get("APP_VERSION", "dev")
+
+
+    def log(level, msg, **fields):
+        print(json.dumps({"ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                          "level": level, "service": "checkout", "version": VERSION,
+                          "msg": msg, **fields}), flush=True)
+
+
+    def load_config():
+        raw = os.environ.get("DB_POOL_SIZE", "10")
+        try:
+            pool = int(raw)
+        except ValueError:
+            log("error", "invalid configuration", key="DB_POOL_SIZE", value=raw,
+                error=f"invalid literal for int() with base 10: {raw!r}")
+            log("fatal", "refusing to start with invalid configuration; exiting", exit_code=1)
+            sys.exit(1)
+        return {"db_pool_size": pool, "db_url": os.environ.get("DB_URL", "")}
+
+
+    def leak(mb_per_sec):
+        hoard = []
+        while True:
+            hoard.append(bytearray(mb_per_sec * 1024 * 1024))
+            log("debug", "cache warmup", cached_mb=len(hoard) * mb_per_sec)
+            time.sleep(1)
+
+
+    class Handler(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            body = json.dumps({"status": "ok", "version": VERSION}).encode()
+            self.send_response(200 if self.path in ("/healthz", "/") else 404)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, *args):
+            pass
+
+
+    if __name__ == "__main__":
+        cfg = load_config()
+        log("info", "starting checkout", db_pool_size=cfg["db_pool_size"],
+            db=f"connecting to {cfg['db_url']}")
+        leak_rate = int(os.environ.get("LEAK_MB_PER_SEC", "0"))
+        if leak_rate:
+            threading.Thread(target=leak, args=(leak_rate,), daemon=True).start()
+        log("info", "listening", port=8080)
+        http.server.ThreadingHTTPServer(("", 8080), Handler).serve_forever()
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: checkout
+  namespace: demo
+  labels:
+    app: checkout
+  annotations:
+    kubernetes.io/change-cause: "deploy v1: initial release"
+spec:
+  replicas: 2
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: checkout
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: checkout
+    spec:
+      containers:
+        - name: checkout
+          image: python:3.12-alpine
+          command: ["python", "-u", "/app/app.py"]
+          env:
+            - name: APP_VERSION
+              value: v1
+            - name: DB_POOL_SIZE
+              value: "20"
+            # Fake credential on purpose: it shows up in logs/env and demonstrates redaction.
+            - name: DB_URL
+              value: postgres://checkout:hunter2@orders-db:5432/orders
+            - name: LEAK_MB_PER_SEC
+              value: "0"
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            periodSeconds: 3
+          resources:
+            requests:
+              cpu: 20m
+              memory: 32Mi
+            limits:
+              memory: 64Mi
+          volumeMounts:
+            - name: code
+              mountPath: /app
+      volumes:
+        - name: code
+          configMap:
+            name: checkout-code
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: checkout
+  namespace: demo
+spec:
+  selector:
+    app: checkout
+  ports:
+    - port: 80
+      targetPort: 8080

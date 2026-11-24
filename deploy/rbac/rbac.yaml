@@ -1,0 +1,77 @@
+# Two identities with least privilege:
+#   sre-copilot-reader   - read-only access used by investigation tools
+#   sre-copilot-executor - may patch/scale deployments, used only after human approval
+# Both are bound per namespace (RoleBinding), so the allowlist is enforced by the API server too.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sre-copilot
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sre-copilot-reader
+  namespace: sre-copilot
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sre-copilot-executor
+  namespace: sre-copilot
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: sre-copilot-reader
+  namespace: demo
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "pods/log", "events"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sre-copilot-reader
+  namespace: demo
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: sre-copilot-reader
+subjects:
+  - kind: ServiceAccount
+    name: sre-copilot-reader
+    namespace: sre-copilot
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: sre-copilot-executor
+  namespace: demo
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "patch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments/scale"]
+    verbs: ["get", "patch"]
+  - apiGroups: ["apps"]
+    resources: ["replicasets"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sre-copilot-executor
+  namespace: demo
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: sre-copilot-executor
+subjects:
+  - kind: ServiceAccount
+    name: sre-copilot-executor
+    namespace: sre-copilot
