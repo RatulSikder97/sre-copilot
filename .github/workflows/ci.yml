@@ -29,7 +29,7 @@ jobs:
           uv run ruff format --check src tests
       - name: mypy
         run: uv run mypy
-      - name: pytest (offline: scripted LLM + recorded fixtures, no API key, no cluster)
+      - name: "pytest (offline: scripted LLM + recorded fixtures, no API key, no cluster)"
         run: uv run pytest
       - name: offline replay of the recorded incidents
         run: |
