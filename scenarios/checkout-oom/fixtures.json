@@ -1,0 +1,522 @@
+{
+ "tools": [
+  {
+   "tool": "k8s_list_pods",
+   "args": {
+    "label_selector": "app=checkout",
+    "namespace": "demo"
+   },
+   "result": {
+    "output": {
+     "pods": [
+      {
+       "name": "checkout-7676544fc6-gw5mx",
+       "phase": "Running",
+       "ready": "0/1",
+       "restarts": 1,
+       "created": "2026-11-24T04:29:52Z",
+       "template_hash": "7676544fc6",
+       "containers": [
+        {
+         "name": "checkout",
+         "ready": false,
+         "restarts": 1,
+         "image": "docker.io/library/python:3.12-alpine",
+         "waiting": {
+          "reason": "CrashLoopBackOff",
+          "message": "back-off 10s restarting failed container=checkout pod=checkout-7676544fc6-gw5mx_demo(1094ef0e-5c25-4f67-8cc2-75ca393cd284)"
+         },
+         "last_terminated": {
+          "reason": "OOMKilled",
+          "exit_code": 137,
+          "finished_at": "2026-11-24T04:30:10Z"
+         }
+        }
+       ]
+      },
+      {
+       "name": "checkout-7676544fc6-rvnv8",
+       "phase": "Running",
+       "ready": "0/1",
+       "restarts": 1,
+       "created": "2026-11-24T04:29:47Z",
+       "template_hash": "7676544fc6",
+       "containers": [
+        {
+         "name": "checkout",
+         "ready": false,
+         "restarts": 1,
+         "image": "docker.io/library/python:3.12-alpine",
+         "waiting": {
+          "reason": "CrashLoopBackOff",
+          "message": "back-off 10s restarting failed container=checkout pod=checkout-7676544fc6-rvnv8_demo(cd449079-1acb-46ae-b93b-14e08944c563)"
+         },
+         "last_terminated": {
+          "reason": "OOMKilled",
+          "exit_code": 137,
+          "finished_at": "2026-11-24T04:30:05Z"
+         }
+        }
+       ]
+      },
+      {
+       "name": "checkout-85dd8c76d6-5hxmn",
+       "phase": "Running",
+       "ready": "1/1",
+       "restarts": 0,
+       "created": "2026-11-24T04:23:29Z",
+       "template_hash": "85dd8c76d6",
+       "containers": [
+        {
+         "name": "checkout",
+         "ready": true,
+         "restarts": 0,
+         "image": "docker.io/library/python:3.12-alpine",
+         "running_since": "2026-11-24T04:23:30Z"
+        }
+       ]
+      },
+      {
+       "name": "checkout-85dd8c76d6-ttzgk",
+       "phase": "Running",
+       "ready": "1/1",
+       "restarts": 0,
+       "created": "2026-11-24T04:23:29Z",
+       "template_hash": "85dd8c76d6",
+       "containers": [
+        {
+         "name": "checkout",
+         "ready": true,
+         "restarts": 0,
+         "image": "docker.io/library/python:3.12-alpine",
+         "running_since": "2026-11-24T04:23:30Z"
+        }
+       ]
+      }
+     ],
+     "unhealthy": [
+      "checkout-7676544fc6-gw5mx",
+      "checkout-7676544fc6-rvnv8"
+     ]
+    },
+    "summary": "4 pods in demo (app=checkout); 2 unhealthy; waiting reasons: CrashLoopBackOff; last terminations: OOMKilled (exit 137)",
+    "link": null,
+    "is_error": false
+   }
+  },
+  {
+   "tool": "prometheus_query",
+   "args": {
+    "query": "kube_pod_container_status_last_terminated_reason{namespace=\"demo\", reason=\"OOMKilled\"} == 1"
+   },
+   "result": {
+    "output": {
+     "query": "kube_pod_container_status_last_terminated_reason{namespace=\"demo\", reason=\"OOMKilled\"} == 1",
+     "series_count": 2,
+     "series": [
+      {
+       "series": "kube_pod_container_status_last_terminated_reason{container=\"checkout\",instance=\"kube-state-metrics.monitoring.svc:8080\",job=\"kube-state-metrics\",namespace=\"demo\",pod=\"checkout-7676544fc6-rvnv8\",reason=\"OOMKilled\",uid=\"cd449079-1acb-46ae-b93b-14e08944c563\"}",
+       "value": "1"
+      },
+      {
+       "series": "kube_pod_container_status_last_terminated_reason{container=\"checkout\",instance=\"kube-state-metrics.monitoring.svc:8080\",job=\"kube-state-metrics\",namespace=\"demo\",pod=\"checkout-7676544fc6-gw5mx\",reason=\"OOMKilled\",uid=\"1094ef0e-5c25-4f67-8cc2-75ca393cd284\"}",
+       "value": "1"
+      }
+     ]
+    },
+    "summary": "PromQL `kube_pod_container_status_last_terminated_reason{namespace=\"demo\", reason=\"OOMKilled\"} == 1` -> 2 series; first=kube_pod_container_status_last_terminated_reason{container=\"checkout\",instance=\"kube-state-metrics.monitoring.svc:8080\",job=\"kube-state-metrics\",namespace=\"demo\",pod=\"checkout-7676544fc6-rvnv8\",reason=\"OOMKilled\",uid=\"cd449079-1acb-46ae-b93b-14e08944c563\"} value=1",
+    "link": "http://127.0.0.1:39090/graph?g0.expr=kube_pod_container_status_last_terminated_reason%7Bnamespace%3D%22demo%22%2C+reason%3D%22OOMKilled%22%7D+%3D%3D+1&g0.tab=0&g0.range_input=30m",
+    "is_error": false
+   }
+  },
+  {
+   "tool": "k8s_describe",
+   "args": {
+    "kind": "deployment",
+    "name": "checkout",
+    "namespace": "demo"
+   },
+   "result": {
+    "output": {
+     "name": "checkout",
+     "revision": 4,
+     "generation": 5,
+     "replicas": {
+      "desired": 2,
+      "updated": 2,
+      "ready": 0,
+      "available": 0,
+      "unavailable": 2
+     },
+     "strategy": "RollingUpdate",
+     "images": [
+      "python:3.12-alpine"
+     ],
+     "env": {
+      "APP_VERSION": "v3",
+      "DB_POOL_SIZE": "20",
+      "DB_URL": "postgres://checkout:[REDACTED]@orders-db:5432/orders",
+      "LEAK_MB_PER_SEC": "8"
+     },
+     "change_cause": "deploy v3: enable response cache warm-up",
+     "conditions": [
+      {
+       "type": "Progressing",
+       "status": "True",
+       "reason": "NewReplicaSetAvailable",
+       "message": "ReplicaSet \"checkout-7676544fc6\" has successfully progressed."
+      },
+      {
+       "type": "Available",
+       "status": "False",
+       "reason": "MinimumReplicasUnavailable",
+       "message": "Deployment does not have minimum availability."
+      }
+     ]
+    },
+    "summary": "deployment/checkout rev 4: 0/2 available, 2 unavailable, images=['python:3.12-alpine']",
+    "link": null,
+    "is_error": false
+   }
+  },
+  {
+   "tool": "k8s_rollout_history",
+   "args": {
+    "deployment": "checkout",
+    "namespace": "demo"
+   },
+   "result": {
+    "output": {
+     "current_revision": 4,
+     "revisions": [
+      {
+       "revision": 4,
+       "replicaset": "checkout-7676544fc6",
+       "created": "2026-11-24T04:29:47Z",
+       "images": [
+        "python:3.12-alpine"
+       ],
+       "env": {
+        "APP_VERSION": "v3",
+        "DB_POOL_SIZE": "20",
+        "DB_URL": "postgres://checkout:[REDACTED]@orders-db:5432/orders",
+        "LEAK_MB_PER_SEC": "8"
+       },
+       "change_cause": "deploy v3: enable response cache warm-up",
+       "replicas": 2,
+       "ready": 0,
+       "current": true
+      },
+      {
+       "revision": 3,
+       "replicaset": "checkout-85dd8c76d6",
+       "created": "2026-11-24T04:23:29Z",
+       "images": [
+        "python:3.12-alpine"
+       ],
+       "env": {
+        "APP_VERSION": "v1",
+        "DB_POOL_SIZE": "20",
+        "DB_URL": "postgres://checkout:[REDACTED]@orders-db:5432/orders",
+        "LEAK_MB_PER_SEC": "0"
+       },
+       "change_cause": "deploy v1: initial release",
+       "replicas": 0,
+       "ready": 0,
+       "current": false
+      },
+      {
+       "revision": 2,
+       "replicaset": "checkout-5fb575f664",
+       "created": "2026-11-24T04:24:02Z",
+       "images": [
+        "python:3.12-alpine"
+       ],
+       "env": {
+        "APP_VERSION": "v2",
+        "DB_POOL_SIZE": "2O",
+        "DB_URL": "postgres://checkout:[REDACTED]@orders-db:5432/orders",
+        "LEAK_MB_PER_SEC": "0"
+       },
+       "change_cause": "deploy v2: tune DB connection pool (DB_POOL_SIZE=2O)",
+       "replicas": 0,
+       "ready": 0,
+       "current": false
+      }
+     ]
+    },
+    "summary": "deployment/checkout: current revision 4, 3 revisions; latest change-cause: 'deploy v3: enable response cache warm-up' at 2026-11-24T04:29:47Z",
+    "link": null,
+    "is_error": false
+   }
+  },
+  {
+   "tool": "k8s_pod_logs",
+   "args": {
+    "container": null,
+    "deployment": "checkout",
+    "namespace": "demo",
+    "pod": null,
+    "previous": true,
+    "tail_lines": 15
+   },
+   "result": {
+    "output": {
+     "pod": "checkout-7676544fc6-gw5mx",
+     "previous": true,
+     "lines": [
+      "{\"ts\": \"2026-11-24T04:30:03Z\", \"level\": \"info\", \"service\": \"checkout\", \"version\": \"v3\", \"msg\": \"starting checkout\", \"db_pool_size\": 20, \"db\": \"connecting to postgres://checkout:[REDACTED]@orders-db:5432/orders\"}",
+      "{\"ts\": \"2026-11-24T04:30:03Z\", \"level\": \"debug\", \"service\": \"checkout\", \"version\": \"v3\", \"msg\": \"cache warmup\", \"cached_mb\": 8}",
+      "{\"ts\": \"2026-11-24T04:30:03Z\", \"level\": \"info\", \"service\": \"checkout\", \"version\": \"v3\", \"msg\": \"listening\", \"port\": 8080}",
+      "{\"ts\": \"2026-11-24T04:30:04Z\", \"level\": \"debug\", \"service\": \"checkout\", \"version\": \"v3\", \"msg\": \"cache warmup\", \"cached_mb\": 16}",
+      "{\"ts\": \"2026-11-24T04:30:05Z\", \"level\": \"debug\", \"service\": \"checkout\", \"version\": \"v3\", \"msg\": \"cache warmup\", \"cached_mb\": 24}",
+      "{\"ts\": \"2026-11-24T04:30:06Z\", \"level\": \"debug\", \"service\": \"checkout\", \"version\": \"v3\", \"msg\": \"cache warmup\", \"cached_mb\": 32}",
+      "{\"ts\": \"2026-11-24T04:30:07Z\", \"level\": \"debug\", \"service\": \"checkout\", \"version\": \"v3\", \"msg\": \"cache warmup\", \"cached_mb\": 40}",
+      "{\"ts\": \"2026-11-24T04:30:09Z\", \"level\": \"debug\", \"service\": \"checkout\", \"version\": \"v3\", \"msg\": \"cache warmup\", \"cached_mb\": 48}"
+     ]
+    },
+    "summary": "8 previous log lines from pod/checkout-7676544fc6-gw5mx; last: {\"ts\": \"2026-11-24T04:30:09Z\", \"level\": \"debug\", \"service\": \"checkout\", \"version\": \"v3\", \"msg\": \"cache warmup\", \"cached_mb\": 48}",
+    "link": null,
+    "is_error": false
+   }
+  },
+  {
+   "tool": "prometheus_query_range",
+   "args": {
+    "minutes": 20,
+    "query": "sum by (pod) (kube_pod_container_status_restarts_total{namespace=\"demo\"})",
+    "step_seconds": 30
+   },
+   "result": {
+    "output": {
+     "query": "sum by (pod) (kube_pod_container_status_restarts_total{namespace=\"demo\"})",
+     "window_minutes": 20,
+     "series": [
+      {
+       "series": "{pod=\"checkout-5fb575f664-v6c2q\"}",
+       "min": 1.0,
+       "max": 5.0,
+       "last": 5.0,
+       "samples": [
+        [
+         "04:24:15",
+         "1"
+        ],
+        [
+         "04:24:45",
+         "2"
+        ],
+        [
+         "04:25:15",
+         "3"
+        ],
+        [
+         "04:25:45",
+         "4"
+        ],
+        [
+         "04:26:15",
+         "4"
+        ],
+        [
+         "04:26:45",
+         "4"
+        ],
+        [
+         "04:27:15",
+         "5"
+        ],
+        [
+         "04:27:45",
+         "5"
+        ],
+        [
+         "04:28:15",
+         "5"
+        ],
+        [
+         "04:28:45",
+         "5"
+        ],
+        [
+         "04:29:15",
+         "5"
+        ]
+       ]
+      },
+      {
+       "series": "{pod=\"checkout-7676544fc6-gw5mx\"}",
+       "min": 1.0,
+       "max": 1.0,
+       "last": 1.0,
+       "samples": [
+        [
+         "04:30:15",
+         "1"
+        ]
+       ]
+      },
+      {
+       "series": "{pod=\"checkout-7676544fc6-rvnv8\"}",
+       "min": 1.0,
+       "max": 1.0,
+       "last": 1.0,
+       "samples": [
+        [
+         "04:30:15",
+         "1"
+        ]
+       ]
+      },
+      {
+       "series": "{pod=\"checkout-85dd8c76d6-5hxmn\"}",
+       "min": 0.0,
+       "max": 0.0,
+       "last": 0.0,
+       "samples": [
+        [
+         "04:23:45",
+         "0"
+        ],
+        [
+         "04:24:15",
+         "0"
+        ],
+        [
+         "04:24:45",
+         "0"
+        ],
+        [
+         "04:25:15",
+         "0"
+        ],
+        [
+         "04:25:45",
+         "0"
+        ],
+        [
+         "04:26:15",
+         "0"
+        ],
+        [
+         "04:26:45",
+         "0"
+        ],
+        [
+         "04:27:15",
+         "0"
+        ],
+        [
+         "04:27:45",
+         "0"
+        ],
+        [
+         "04:28:15",
+         "0"
+        ],
+        [
+         "04:28:45",
+         "0"
+        ],
+        [
+         "04:29:15",
+         "0"
+        ],
+        [
+         "04:29:45",
+         "0"
+        ],
+        [
+         "04:30:15",
+         "0"
+        ]
+       ]
+      },
+      {
+       "series": "{pod=\"checkout-85dd8c76d6-ttzgk\"}",
+       "min": 0.0,
+       "max": 0.0,
+       "last": 0.0,
+       "samples": [
+        [
+         "04:23:45",
+         "0"
+        ],
+        [
+         "04:24:15",
+         "0"
+        ],
+        [
+         "04:24:45",
+         "0"
+        ],
+        [
+         "04:25:15",
+         "0"
+        ],
+        [
+         "04:25:45",
+         "0"
+        ],
+        [
+         "04:26:15",
+         "0"
+        ],
+        [
+         "04:26:45",
+         "0"
+        ],
+        [
+         "04:27:15",
+         "0"
+        ],
+        [
+         "04:27:45",
+         "0"
+        ],
+        [
+         "04:28:15",
+         "0"
+        ],
+        [
+         "04:28:45",
+         "0"
+        ],
+        [
+         "04:29:15",
+         "0"
+        ],
+        [
+         "04:29:45",
+         "0"
+        ],
+        [
+         "04:30:15",
+         "0"
+        ]
+       ]
+      }
+     ]
+    },
+    "summary": "PromQL range `sum by (pod) (kube_pod_container_status_restarts_total{namespace=\"demo\"})` over 20m -> 5 series; {pod=\"checkout-5fb575f664-v6c2q\"} max=5.0 last=5.0",
+    "link": "http://127.0.0.1:39090/graph?g0.expr=sum+by+%28pod%29+%28kube_pod_container_status_restarts_total%7Bnamespace%3D%22demo%22%7D%29&g0.tab=0&g0.range_input=20m",
+    "is_error": false
+   }
+  }
+ ],
+ "dry_runs": [
+  {
+   "key": "{\"deployment\":\"checkout\",\"kind\":\"rollback\",\"namespace\":\"demo\",\"replicas\":null,\"to_revision\":null}",
+   "result": {
+    "ok": true,
+    "summary": "server-side dry run OK: rollback deployment/checkout -n demo to revision 3 ('deploy v1: initial release')",
+    "diff": [
+     "env.checkout.APP_VERSION: 'v3' -> 'v1'",
+     "env.checkout.LEAK_MB_PER_SEC: '8' -> '0'"
+    ],
+    "resolved_revision": 3,
+    "observed_generation": 5
+   }
+  }
+ ]
+}

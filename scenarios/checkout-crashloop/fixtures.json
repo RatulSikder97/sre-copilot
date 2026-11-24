@@ -1,0 +1,562 @@
+{
+ "tools": [
+  {
+   "tool": "k8s_list_pods",
+   "args": {
+    "label_selector": "app=checkout",
+    "namespace": "demo"
+   },
+   "result": {
+    "output": {
+     "pods": [
+      {
+       "name": "checkout-5fb575f664-v6c2q",
+       "phase": "Running",
+       "ready": "0/1",
+       "restarts": 5,
+       "created": "2026-11-24T04:24:02Z",
+       "template_hash": "5fb575f664",
+       "containers": [
+        {
+         "name": "checkout",
+         "ready": false,
+         "restarts": 5,
+         "image": "docker.io/library/python:3.12-alpine",
+         "waiting": {
+          "reason": "CrashLoopBackOff",
+          "message": "back-off 2m40s restarting failed container=checkout pod=checkout-5fb575f664-v6c2q_demo(ef0b1d18-b2f2-480d-90ff-41ee1f1fab23)"
+         },
+         "last_terminated": {
+          "reason": "Error",
+          "exit_code": 1,
+          "finished_at": "2026-11-24T04:27:10Z"
+         }
+        }
+       ]
+      },
+      {
+       "name": "checkout-85dd8c76d6-5hxmn",
+       "phase": "Running",
+       "ready": "1/1",
+       "restarts": 0,
+       "created": "2026-11-24T04:23:29Z",
+       "template_hash": "85dd8c76d6",
+       "containers": [
+        {
+         "name": "checkout",
+         "ready": true,
+         "restarts": 0,
+         "image": "docker.io/library/python:3.12-alpine",
+         "running_since": "2026-11-24T04:23:30Z"
+        }
+       ]
+      },
+      {
+       "name": "checkout-85dd8c76d6-ttzgk",
+       "phase": "Running",
+       "ready": "1/1",
+       "restarts": 0,
+       "created": "2026-11-24T04:23:29Z",
+       "template_hash": "85dd8c76d6",
+       "containers": [
+        {
+         "name": "checkout",
+         "ready": true,
+         "restarts": 0,
+         "image": "docker.io/library/python:3.12-alpine",
+         "running_since": "2026-11-24T04:23:30Z"
+        }
+       ]
+      }
+     ],
+     "unhealthy": [
+      "checkout-5fb575f664-v6c2q"
+     ]
+    },
+    "summary": "3 pods in demo (app=checkout); 1 unhealthy; waiting reasons: CrashLoopBackOff; last terminations: Error (exit 1)",
+    "link": null,
+    "is_error": false
+   }
+  },
+  {
+   "tool": "k8s_events",
+   "args": {
+    "involved_object": "checkout",
+    "limit": 30,
+    "namespace": "demo"
+   },
+   "result": {
+    "output": {
+     "events": [
+      {
+       "last_seen": "2026-11-24T04:28:33Z",
+       "type": "Warning",
+       "reason": "BackOff",
+       "object": "pod/checkout-5fb575f664-v6c2q",
+       "count": 8,
+       "message": "Back-off restarting failed container checkout in pod checkout-5fb575f664-v6c2q_demo(ef0b1d18-b2f2-480d-90ff-41ee1f1fab23)"
+      },
+      {
+       "last_seen": "2026-11-24T04:27:13Z",
+       "type": "Warning",
+       "reason": "Unhealthy",
+       "object": "pod/checkout-5fb575f664-v6c2q",
+       "count": 13,
+       "message": "Readiness probe failed: Get \"http://10.244.0.11:8080/healthz\": dial tcp 10.244.0.11:8080: connect: connection refused"
+      },
+      {
+       "last_seen": "2026-11-24T04:27:01Z",
+       "type": "Normal",
+       "reason": "Started",
+       "object": "pod/checkout-5fb575f664-v6c2q",
+       "count": 6,
+       "message": "Container started"
+      },
+      {
+       "last_seen": "2026-11-24T04:26:58Z",
+       "type": "Normal",
+       "reason": "Created",
+       "object": "pod/checkout-5fb575f664-v6c2q",
+       "count": 6,
+       "message": "Container created"
+      },
+      {
+       "last_seen": "2026-11-24T04:26:57Z",
+       "type": "Normal",
+       "reason": "Pulled",
+       "object": "pod/checkout-5fb575f664-v6c2q",
+       "count": 6,
+       "message": "Container image \"python:3.12-alpine\" already present on machine and can be accessed by the pod"
+      },
+      {
+       "last_seen": "2026-11-24T04:24:02Z",
+       "type": "Normal",
+       "reason": "Scheduled",
+       "object": "pod/checkout-5fb575f664-v6c2q",
+       "count": 1,
+       "message": "Successfully assigned demo/checkout-5fb575f664-v6c2q to sre-copilot-control-plane"
+      },
+      {
+       "last_seen": "2026-11-24T04:24:02Z",
+       "type": "Normal",
+       "reason": "SuccessfulCreate",
+       "object": "replicaset/checkout-5fb575f664",
+       "count": 1,
+       "message": "Created pod: checkout-5fb575f664-v6c2q"
+      },
+      {
+       "last_seen": "2026-11-24T04:24:02Z",
+       "type": "Normal",
+       "reason": "ScalingReplicaSet",
+       "object": "deployment/checkout",
+       "count": 1,
+       "message": "Scaled up replica set checkout-5fb575f664 from 0 to 1"
+      },
+      {
+       "last_seen": "2026-11-24T04:23:30Z",
+       "type": "Normal",
+       "reason": "Pulled",
+       "object": "pod/checkout-85dd8c76d6-5hxmn",
+       "count": 1,
+       "message": "Container image \"python:3.12-alpine\" already present on machine and can be accessed by the pod"
+      },
+      {
+       "last_seen": "2026-11-24T04:23:30Z",
+       "type": "Normal",
+       "reason": "Created",
+       "object": "pod/checkout-85dd8c76d6-5hxmn",
+       "count": 1,
+       "message": "Container created"
+      },
+      {
+       "last_seen": "2026-11-24T04:23:30Z",
+       "type": "Normal",
+       "reason": "Started",
+       "object": "pod/checkout-85dd8c76d6-5hxmn",
+       "count": 1,
+       "message": "Container started"
+      },
+      {
+       "last_seen": "2026-11-24T04:23:30Z",
+       "type": "Warning",
+       "reason": "Unhealthy",
+       "object": "pod/checkout-85dd8c76d6-5hxmn",
+       "count": 2,
+       "message": "Readiness probe failed: Get \"http://10.244.0.9:8080/healthz\": dial tcp 10.244.0.9:8080: connect: connection refused"
+      },
+      {
+       "last_seen": "2026-11-24T04:23:30Z",
+       "type": "Normal",
+       "reason": "Pulled",
+       "object": "pod/checkout-85dd8c76d6-ttzgk",
+       "count": 1,
+       "message": "Container image \"python:3.12-alpine\" already present on machine and can be accessed by the pod"
+      },
+      {
+       "last_seen": "2026-11-24T04:23:30Z",
+       "type": "Normal",
+       "reason": "Created",
+       "object": "pod/checkout-85dd8c76d6-ttzgk",
+       "count": 1,
+       "message": "Container created"
+      },
+      {
+       "last_seen": "2026-11-24T04:23:30Z",
+       "type": "Normal",
+       "reason": "Started",
+       "object": "pod/checkout-85dd8c76d6-ttzgk",
+       "count": 1,
+       "message": "Container started"
+      },
+      {
+       "last_seen": "2026-11-24T04:23:30Z",
+       "type": "Warning",
+       "reason": "Unhealthy",
+       "object": "pod/checkout-85dd8c76d6-ttzgk",
+       "count": 2,
+       "message": "Readiness probe failed: Get \"http://10.244.0.10:8080/healthz\": dial tcp 10.244.0.10:8080: connect: connection refused"
+      },
+      {
+       "last_seen": "2026-11-24T04:23:29Z",
+       "type": "Normal",
+       "reason": "Scheduled",
+       "object": "pod/checkout-85dd8c76d6-5hxmn",
+       "count": 1,
+       "message": "Successfully assigned demo/checkout-85dd8c76d6-5hxmn to sre-copilot-control-plane"
+      },
+      {
+       "last_seen": "2026-11-24T04:23:29Z",
+       "type": "Normal",
+       "reason": "Scheduled",
+       "object": "pod/checkout-85dd8c76d6-ttzgk",
+       "count": 1,
+       "message": "Successfully assigned demo/checkout-85dd8c76d6-ttzgk to sre-copilot-control-plane"
+      },
+      {
+       "last_seen": "2026-11-24T04:23:29Z",
+       "type": "Normal",
+       "reason": "SuccessfulCreate",
+       "object": "replicaset/checkout-85dd8c76d6",
+       "count": 1,
+       "message": "Created pod: checkout-85dd8c76d6-5hxmn"
+      },
+      {
+       "last_seen": "2026-11-24T04:23:29Z",
+       "type": "Normal",
+       "reason": "SuccessfulCreate",
+       "object": "replicaset/checkout-85dd8c76d6",
+       "count": 1,
+       "message": "Created pod: checkout-85dd8c76d6-ttzgk"
+      },
+      {
+       "last_seen": "2026-11-24T04:23:29Z",
+       "type": "Normal",
+       "reason": "ScalingReplicaSet",
+       "object": "deployment/checkout",
+       "count": 1,
+       "message": "Scaled up replica set checkout-85dd8c76d6 from 0 to 2"
+      }
+     ]
+    },
+    "summary": "21 recent events in demo; 4 warnings (BackOff, Unhealthy)",
+    "link": null,
+    "is_error": false
+   }
+  },
+  {
+   "tool": "prometheus_query",
+   "args": {
+    "query": "max by (pod) (max_over_time(kube_pod_container_status_waiting_reason{namespace=\"demo\", reason=\"CrashLoopBackOff\"}[5m]))"
+   },
+   "result": {
+    "output": {
+     "query": "max by (pod) (max_over_time(kube_pod_container_status_waiting_reason{namespace=\"demo\", reason=\"CrashLoopBackOff\"}[5m]))",
+     "series_count": 1,
+     "series": [
+      {
+       "series": "{pod=\"checkout-5fb575f664-v6c2q\"}",
+       "value": "1"
+      }
+     ]
+    },
+    "summary": "PromQL `max by (pod) (max_over_time(kube_pod_container_status_waiting_reason{namespace=\"demo\", reason=\"CrashLoopBackOff\"}[5m]))` -> 1 series; first={pod=\"checkout-5fb575f664-v6c2q\"} value=1",
+    "link": "http://127.0.0.1:39090/graph?g0.expr=max+by+%28pod%29+%28max_over_time%28kube_pod_container_status_waiting_reason%7Bnamespace%3D%22demo%22%2C+reason%3D%22CrashLoopBackOff%22%7D%5B5m%5D%29%29&g0.tab=0&g0.range_input=30m",
+    "is_error": false
+   }
+  },
+  {
+   "tool": "k8s_rollout_history",
+   "args": {
+    "deployment": "checkout",
+    "namespace": "demo"
+   },
+   "result": {
+    "output": {
+     "current_revision": 2,
+     "revisions": [
+      {
+       "revision": 2,
+       "replicaset": "checkout-5fb575f664",
+       "created": "2026-11-24T04:24:02Z",
+       "images": [
+        "python:3.12-alpine"
+       ],
+       "env": {
+        "APP_VERSION": "v2",
+        "DB_POOL_SIZE": "2O",
+        "DB_URL": "postgres://checkout:[REDACTED]@orders-db:5432/orders",
+        "LEAK_MB_PER_SEC": "0"
+       },
+       "change_cause": "deploy v2: tune DB connection pool (DB_POOL_SIZE=2O)",
+       "replicas": 1,
+       "ready": 0,
+       "current": true
+      },
+      {
+       "revision": 1,
+       "replicaset": "checkout-85dd8c76d6",
+       "created": "2026-11-24T04:23:29Z",
+       "images": [
+        "python:3.12-alpine"
+       ],
+       "env": {
+        "APP_VERSION": "v1",
+        "DB_POOL_SIZE": "20",
+        "DB_URL": "postgres://checkout:[REDACTED]@orders-db:5432/orders",
+        "LEAK_MB_PER_SEC": "0"
+       },
+       "change_cause": "deploy v1: initial release",
+       "replicas": 2,
+       "ready": 2,
+       "current": false
+      }
+     ]
+    },
+    "summary": "deployment/checkout: current revision 2, 2 revisions; latest change-cause: 'deploy v2: tune DB connection pool (DB_POOL_SIZE=2O)' at 2026-11-24T04:24:02Z",
+    "link": null,
+    "is_error": false
+   }
+  },
+  {
+   "tool": "recent_deploys",
+   "args": {
+    "minutes": 120,
+    "namespace": "demo"
+   },
+   "result": {
+    "output": {
+     "window_minutes": 120,
+     "kubernetes": [
+      {
+       "deployment": "checkout",
+       "revision": 2,
+       "created": "2026-11-24T04:24:02Z",
+       "images": [
+        "python:3.12-alpine"
+       ],
+       "change_cause": "deploy v2: tune DB connection pool (DB_POOL_SIZE=2O)"
+      },
+      {
+       "deployment": "checkout",
+       "revision": 1,
+       "created": "2026-11-24T04:23:29Z",
+       "images": [
+        "python:3.12-alpine"
+       ],
+       "change_cause": "deploy v1: initial release"
+      }
+     ]
+    },
+    "summary": "2 rollouts in demo in the last 120m; newest: checkout rev 2 at 2026-11-24T04:24:02Z",
+    "link": null,
+    "is_error": false
+   }
+  },
+  {
+   "tool": "k8s_pod_logs",
+   "args": {
+    "container": null,
+    "deployment": "checkout",
+    "namespace": "demo",
+    "pod": null,
+    "previous": true,
+    "tail_lines": 20
+   },
+   "result": {
+    "output": {
+     "pod": "checkout-5fb575f664-v6c2q",
+     "previous": true,
+     "lines": [
+      "{\"ts\": \"2026-11-24T04:27:10Z\", \"level\": \"error\", \"service\": \"checkout\", \"version\": \"v2\", \"msg\": \"invalid configuration\", \"key\": \"DB_POOL_SIZE\", \"value\": \"2O\", \"error\": \"invalid literal for int() with base 10: '2O'\"}",
+      "{\"ts\": \"2026-11-24T04:27:10Z\", \"level\": \"fatal\", \"service\": \"checkout\", \"version\": \"v2\", \"msg\": \"refusing to start with invalid configuration; exiting\", \"exit_code\": 1}"
+     ]
+    },
+    "summary": "2 previous log lines from pod/checkout-5fb575f664-v6c2q; last: {\"ts\": \"2026-11-24T04:27:10Z\", \"level\": \"fatal\", \"service\": \"checkout\", \"version\": \"v2\", \"msg\": \"refusing to start with invalid configuration; exiting\", \"exit_c",
+    "link": null,
+    "is_error": false
+   }
+  },
+  {
+   "tool": "loki_query",
+   "args": {
+    "app": "checkout",
+    "contains": "invalid configuration",
+    "limit": 20,
+    "minutes": 30,
+    "namespace": "demo"
+   },
+   "result": {
+    "output": {
+     "query": "{namespace=\"demo\", app=\"checkout\"} |= \"invalid configuration\"",
+     "line_count": 12,
+     "lines": [
+      {
+       "ts": "2026-11-24T04:27:10Z",
+       "pod": "checkout-5fb575f664-v6c2q",
+       "line": "{\"ts\": \"2026-11-24T04:27:10Z\", \"level\": \"fatal\", \"service\": \"checkout\", \"version\": \"v2\", \"msg\": \"refusing to start with invalid configuration; exiting\", \"exit_code\": 1}"
+      },
+      {
+       "ts": "2026-11-24T04:27:10Z",
+       "pod": "checkout-5fb575f664-v6c2q",
+       "line": "{\"ts\": \"2026-11-24T04:27:10Z\", \"level\": \"error\", \"service\": \"checkout\", \"version\": \"v2\", \"msg\": \"invalid configuration\", \"key\": \"DB_POOL_SIZE\", \"value\": \"2O\", \"error\": \"invalid literal for int() with base 10: '2O'\"}"
+      },
+      {
+       "ts": "2026-11-24T04:25:36Z",
+       "pod": "checkout-5fb575f664-v6c2q",
+       "line": "{\"ts\": \"2026-11-24T04:25:36Z\", \"level\": \"fatal\", \"service\": \"checkout\", \"version\": \"v2\", \"msg\": \"refusing to start with invalid configuration; exiting\", \"exit_code\": 1}"
+      },
+      {
+       "ts": "2026-11-24T04:25:36Z",
+       "pod": "checkout-5fb575f664-v6c2q",
+       "line": "{\"ts\": \"2026-11-24T04:25:36Z\", \"level\": \"error\", \"service\": \"checkout\", \"version\": \"v2\", \"msg\": \"invalid configuration\", \"key\": \"DB_POOL_SIZE\", \"value\": \"2O\", \"error\": \"invalid literal for int() with base 10: '2O'\"}"
+      },
+      {
+       "ts": "2026-11-24T04:24:40Z",
+       "pod": "checkout-5fb575f664-v6c2q",
+       "line": "{\"ts\": \"2026-11-24T04:24:40Z\", \"level\": \"fatal\", \"service\": \"checkout\", \"version\": \"v2\", \"msg\": \"refusing to start with invalid configuration; exiting\", \"exit_code\": 1}"
+      },
+      {
+       "ts": "2026-11-24T04:24:40Z",
+       "pod": "checkout-5fb575f664-v6c2q",
+       "line": "{\"ts\": \"2026-11-24T04:24:40Z\", \"level\": \"error\", \"service\": \"checkout\", \"version\": \"v2\", \"msg\": \"invalid configuration\", \"key\": \"DB_POOL_SIZE\", \"value\": \"2O\", \"error\": \"invalid literal for int() with base 10: '2O'\"}"
+      },
+      {
+       "ts": "2026-11-24T04:24:18Z",
+       "pod": "checkout-5fb575f664-v6c2q",
+       "line": "{\"ts\": \"2026-11-24T04:24:18Z\", \"level\": \"fatal\", \"service\": \"checkout\", \"version\": \"v2\", \"msg\": \"refusing to start with invalid configuration; exiting\", \"exit_code\": 1}"
+      },
+      {
+       "ts": "2026-11-24T04:24:18Z",
+       "pod": "checkout-5fb575f664-v6c2q",
+       "line": "{\"ts\": \"2026-11-24T04:24:18Z\", \"level\": \"error\", \"service\": \"checkout\", \"version\": \"v2\", \"msg\": \"invalid configuration\", \"key\": \"DB_POOL_SIZE\", \"value\": \"2O\", \"error\": \"invalid literal for int() with base 10: '2O'\"}"
+      },
+      {
+       "ts": "2026-11-24T04:24:05Z",
+       "pod": "checkout-5fb575f664-v6c2q",
+       "line": "{\"ts\": \"2026-11-24T04:24:05Z\", \"level\": \"fatal\", \"service\": \"checkout\", \"version\": \"v2\", \"msg\": \"refusing to start with invalid configuration; exiting\", \"exit_code\": 1}"
+      },
+      {
+       "ts": "2026-11-24T04:24:05Z",
+       "pod": "checkout-5fb575f664-v6c2q",
+       "line": "{\"ts\": \"2026-11-24T04:24:05Z\", \"level\": \"error\", \"service\": \"checkout\", \"version\": \"v2\", \"msg\": \"invalid configuration\", \"key\": \"DB_POOL_SIZE\", \"value\": \"2O\", \"error\": \"invalid literal for int() with base 10: '2O'\"}"
+      },
+      {
+       "ts": "2026-11-24T04:24:04Z",
+       "pod": "checkout-5fb575f664-v6c2q",
+       "line": "{\"ts\": \"2026-11-24T04:24:04Z\", \"level\": \"fatal\", \"service\": \"checkout\", \"version\": \"v2\", \"msg\": \"refusing to start with invalid configuration; exiting\", \"exit_code\": 1}"
+      },
+      {
+       "ts": "2026-11-24T04:24:04Z",
+       "pod": "checkout-5fb575f664-v6c2q",
+       "line": "{\"ts\": \"2026-11-24T04:24:04Z\", \"level\": \"error\", \"service\": \"checkout\", \"version\": \"v2\", \"msg\": \"invalid configuration\", \"key\": \"DB_POOL_SIZE\", \"value\": \"2O\", \"error\": \"invalid literal for int() with base 10: '2O'\"}"
+      }
+     ]
+    },
+    "summary": "LogQL `{namespace=\"demo\", app=\"checkout\"} |= \"invalid configuration\"` over 30m -> 12 lines; latest: {\"ts\": \"2026-11-24T04:27:10Z\", \"level\": \"fatal\", \"service\": \"checkout\", \"version\": \"v2\", \"msg\": \"refusing to start with invalid configuration; exiting\", \"exit_c",
+    "link": "http://127.0.0.1:39100/loki/api/v1/query_range?query=%7Bnamespace%3D%22demo%22%2C+app%3D%22checkout%22%7D+%7C%3D+%22invalid+configuration%22",
+    "is_error": false
+   }
+  },
+  {
+   "tool": "prometheus_query",
+   "args": {
+    "query": "kube_pod_container_status_last_terminated_reason{namespace=\"demo\", reason=\"OOMKilled\"} == 1"
+   },
+   "result": {
+    "output": {
+     "query": "kube_pod_container_status_last_terminated_reason{namespace=\"demo\", reason=\"OOMKilled\"} == 1",
+     "series_count": 0,
+     "series": []
+    },
+    "summary": "PromQL `kube_pod_container_status_last_terminated_reason{namespace=\"demo\", reason=\"OOMKilled\"} == 1` -> 0 series",
+    "link": "http://127.0.0.1:39090/graph?g0.expr=kube_pod_container_status_last_terminated_reason%7Bnamespace%3D%22demo%22%2C+reason%3D%22OOMKilled%22%7D+%3D%3D+1&g0.tab=0&g0.range_input=30m",
+    "is_error": false
+   }
+  },
+  {
+   "tool": "k8s_describe",
+   "args": {
+    "kind": "deployment",
+    "name": "checkout",
+    "namespace": "demo"
+   },
+   "result": {
+    "output": {
+     "name": "checkout",
+     "revision": 2,
+     "generation": 2,
+     "replicas": {
+      "desired": 2,
+      "updated": 1,
+      "ready": 2,
+      "available": 2,
+      "unavailable": 1
+     },
+     "strategy": "RollingUpdate",
+     "images": [
+      "python:3.12-alpine"
+     ],
+     "env": {
+      "APP_VERSION": "v2",
+      "DB_POOL_SIZE": "2O",
+      "DB_URL": "postgres://checkout:[REDACTED]@orders-db:5432/orders",
+      "LEAK_MB_PER_SEC": "0"
+     },
+     "change_cause": "deploy v2: tune DB connection pool (DB_POOL_SIZE=2O)",
+     "conditions": [
+      {
+       "type": "Available",
+       "status": "True",
+       "reason": "MinimumReplicasAvailable",
+       "message": "Deployment has minimum availability."
+      },
+      {
+       "type": "Progressing",
+       "status": "True",
+       "reason": "ReplicaSetUpdated",
+       "message": "ReplicaSet \"checkout-5fb575f664\" is progressing."
+      }
+     ]
+    },
+    "summary": "deployment/checkout rev 2: 2/2 available, 1 unavailable, images=['python:3.12-alpine']",
+    "link": null,
+    "is_error": false
+   }
+  }
+ ],
+ "dry_runs": [
+  {
+   "key": "{\"deployment\":\"checkout\",\"kind\":\"rollback\",\"namespace\":\"demo\",\"replicas\":null,\"to_revision\":null}",
+   "result": {
+    "ok": true,
+    "summary": "server-side dry run OK: rollback deployment/checkout -n demo to revision 1 ('deploy v1: initial release')",
+    "diff": [
+     "env.checkout.APP_VERSION: 'v2' -> 'v1'",
+     "env.checkout.DB_POOL_SIZE: '2O' -> '20'"
+    ],
+    "resolved_revision": 1,
+    "observed_generation": 2
+   }
+  }
+ ]
+}

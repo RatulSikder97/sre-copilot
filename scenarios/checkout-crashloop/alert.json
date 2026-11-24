@@ -1,0 +1,30 @@
+{
+  "version": "4",
+  "status": "firing",
+  "receiver": "sre-copilot",
+  "groupKey": "{}:{alertname=\"KubePodCrashLooping\"}",
+  "commonLabels": {
+    "alertname": "KubePodCrashLooping"
+  },
+  "alerts": [
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "KubePodCrashLooping",
+        "container": "checkout",
+        "namespace": "demo",
+        "pod": "checkout-5fb575f664-v6c2q",
+        "severity": "critical"
+      },
+      "annotations": {
+        "description": "Container checkout of pod checkout-5fb575f664-v6c2q is in CrashLoopBackOff.",
+        "runbook": "runbooks/crashloopbackoff.md",
+        "summary": "Pod demo/checkout-5fb575f664-v6c2q is crash looping"
+      },
+      "startsAt": "2026-11-24T04:28:41.587090Z",
+      "endsAt": "0001-01-01T00:00:00Z",
+      "generatorURL": "http://localhost:39090/alerts",
+      "fingerprint": "alertname=KubePodCrashLooping,container=checkout,namespace=demo,pod=checkout-5fb575f664-v6c2q,severity=critical"
+    }
+  ]
+}

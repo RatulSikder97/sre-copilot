@@ -1,0 +1,30 @@
+{
+  "version": "4",
+  "status": "firing",
+  "receiver": "sre-copilot",
+  "groupKey": "{}:{alertname=\"KubeContainerOOMKilled\"}",
+  "commonLabels": {
+    "alertname": "KubeContainerOOMKilled"
+  },
+  "alerts": [
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "KubeContainerOOMKilled",
+        "container": "checkout",
+        "namespace": "demo",
+        "pod": "checkout-7676544fc6-rvnv8",
+        "severity": "critical"
+      },
+      "annotations": {
+        "description": "The container exceeded its memory limit and was killed by the kernel.",
+        "runbook": "runbooks/oomkilled.md",
+        "summary": "Container checkout in demo/checkout-7676544fc6-rvnv8 was OOMKilled"
+      },
+      "startsAt": "2026-11-24T04:30:01.587090Z",
+      "endsAt": "0001-01-01T00:00:00Z",
+      "generatorURL": "http://localhost:39090/alerts",
+      "fingerprint": "alertname=KubeContainerOOMKilled,container=checkout,namespace=demo,pod=checkout-7676544fc6-rvnv8,severity=critical"
+    }
+  ]
+}

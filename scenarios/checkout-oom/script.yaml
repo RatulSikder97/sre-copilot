@@ -1,0 +1,111 @@
+# Replay script: scripted model turns for the "memory leak" incident.
+# NOT model output; see scenarios/checkout-crashloop/script.yaml for how replay works.
+name: checkout-oom
+description: checkout v3 enables a cache warm-up that leaks ~8 MB/s and is OOMKilled at its 64Mi limit
+symptom: checkout containers are being OOMKilled
+turns:
+  - text: Confirming which containers are OOMKilled and how the deployment looks.
+    tool_calls:
+      - name: k8s_list_pods
+        input: {namespace: demo, label_selector: app=checkout}
+        expect: ['"exit_code": 137']
+      - name: prometheus_query
+        input:
+          query: 'kube_pod_container_status_last_terminated_reason{namespace="demo", reason="OOMKilled"} == 1'
+        expect: [checkout]
+      - name: k8s_describe
+        input: {namespace: demo, kind: deployment, name: checkout}
+        expect: ['"available": 0']
+
+  - text: Recording hypotheses.
+    tool_calls:
+      - name: record_hypothesis
+        input:
+          statement: The latest rollout introduced unbounded memory growth (a leak), so containers hit their limit.
+          confidence: 0.5
+      - name: record_hypothesis
+        input:
+          statement: The 64Mi memory limit is too tight for normal steady-state usage (organic growth).
+          confidence: 0.3
+
+  - text: Correlating with the rollout history and reading the killed instance's output.
+    tool_calls:
+      - name: k8s_rollout_history
+        input: {namespace: demo, deployment: checkout}
+        expect: [deploy v3, LEAK_MB_PER_SEC]
+      - name: k8s_pod_logs
+        input: {namespace: demo, deployment: checkout, previous: true, tail_lines: 15}
+        expect: [cached_mb]
+      - name: prometheus_query_range
+        input:
+          query: 'sum by (pod) (kube_pod_container_status_restarts_total{namespace="demo"})'
+          minutes: 20
+          step_seconds: 30
+        expect: [checkout]
+      - name: runbook_search
+        input: {query: OOMKilled memory limit leak after rollout, k: 2}
+        expect: [oomkilled.md]
+
+  - text: Concluding.
+    tool_calls:
+      - name: update_hypothesis
+        input:
+          id: H1
+          status: supported
+          confidence: 0.9
+          evidence_ids: [E1, E2, E4, E5]
+          notes: Revision with change-cause "deploy v3" enables cache warm-up; logs show cached_mb climbing until the kill.
+      - name: update_hypothesis
+        input:
+          id: H2
+          status: ruled_out
+          confidence: 0.05
+          evidence_ids: [E4, E6]
+          notes: Older revision pods run under the same 64Mi limit without restarts; growth is unbounded, not steady-state.
+      - name: propose_rollback
+        input:
+          namespace: demo
+          deployment: checkout
+          reason: >-
+            The "deploy v3" revision enables a cache warm-up that grows memory until the 64Mi limit
+            (E4, E5) and is OOMKilled (E1, E2). Raising the limit would only delay the kill; roll back
+            to the previous revision per runbooks/oomkilled.md.
+        expect: [server-side dry run OK]
+
+  - text: Submitting the report.
+    tool_calls:
+      - name: submit_report
+        input:
+          title: checkout v3 cache warm-up leaks memory and is OOMKilled
+          severity: SEV1
+          summary: >-
+            Revision "deploy v3" of checkout enables a response cache warm-up that allocates memory
+            continuously (cached_mb climbing in the logs). New containers pass their readiness probe
+            during the first seconds, so the rolling update proceeded and scaled the healthy revision
+            down; seconds later the new containers reach the 64Mi limit and are OOMKilled (exit 137)
+            in a loop.
+          impact: >-
+            Outage: checkout has 0 of 2 replicas available (E3). Readiness probes did not catch the
+            leak, so the rollout replaced every healthy pod before the first OOM kill.
+          timeline:
+            - {time: T0, event: 'Rollout of "deploy v3: enable response cache warm-up"', evidence_ids: [E4]}
+            - {time: T0 + seconds, event: New pods pass readiness; rolling update scales the previous revision down, evidence_ids: [E3, E6]}
+            - {time: T0 + ~10s, event: Container memory reaches the 64Mi limit; OOMKilled and restarted repeatedly, evidence_ids: [E1, E2, E5]}
+            - {time: T0 + ~30s, event: KubeContainerOOMKilled fires; 0/2 replicas available, evidence_ids: [E2, E3]}
+          root_cause:
+            hypothesis: Unbounded memory growth from the cache warm-up enabled in the "deploy v3" revision
+            confidence: 0.9
+            reasoning: >-
+              Only containers of the newest revision are OOMKilled (E1, E2). That revision's only functional
+              change enables LEAK_MB_PER_SEC/cache warm-up (E4), and the killed instance logs steadily
+              increasing cached_mb right up to the kill (E5). Pods from the previous revision run under
+              the same limit without restarts (E6), ruling out a limit that is simply too tight.
+            evidence_ids: [E1, E2, E4, E5, E6]
+          remediation:
+            - {step: Approve the rollback of deployment/checkout to the previous revision, proposal_id: '{{proposal:0}}', risk: low}
+            - {step: Confirm 2/2 replicas available and restart counters flat for 10 minutes, risk: low}
+            - {step: Keep the cache warm-up disabled until it has a bounded size, risk: low}
+          runbook_refs: [runbooks/oomkilled.md]
+          follow_ups:
+            - Add a memory soak test for the warm-up path; bound the cache by entries and bytes.
+            - Set minReadySeconds (or a startup probe that exercises warm-up) so a revision that dies after becoming ready cannot complete a rollout.

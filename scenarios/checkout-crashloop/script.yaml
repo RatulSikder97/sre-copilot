@@ -1,0 +1,146 @@
+# Replay script: scripted model turns for the "bad config rollout" incident.
+# This is NOT model output. It drives the real agent loop, tools, approval gate and
+# report pipeline deterministically; `expect` makes the run fail if live tool output
+# diverges from what the script assumes.
+name: checkout-crashloop
+description: checkout v2 rollout ships DB_POOL_SIZE=2O (letter O) and crash-loops on startup
+symptom: checkout pods are crash looping after a deploy
+turns:
+  - text: >-
+      Confirming the symptom first: pod state, recent warning events and the alerting
+      series, in parallel.
+    tool_calls:
+      - name: k8s_list_pods
+        input: {namespace: demo, label_selector: app=checkout}
+        expect: ['"exit_code": 1']
+      - name: k8s_events
+        input: {namespace: demo, involved_object: checkout, limit: 30}
+        expect: [BackOff]
+      - name: prometheus_query
+        input:
+          query: 'max by (pod) (max_over_time(kube_pod_container_status_waiting_reason{namespace="demo", reason="CrashLoopBackOff"}[5m]))'
+        expect: [checkout]
+
+  - text: >-
+      One pod is crash looping while the older replicas stay ready, which looks like a stuck
+      rolling update. Recording competing explanations before digging in.
+    tool_calls:
+      - name: record_hypothesis
+        input:
+          statement: The latest checkout rollout introduced a change that makes new pods exit on startup.
+          confidence: 0.5
+      - name: record_hypothesis
+        input:
+          statement: New pods are killed for exceeding their memory limit (OOMKilled).
+          confidence: 0.2
+      - name: record_hypothesis
+        input:
+          statement: A dependency (orders database) is unavailable, so the process fails during startup.
+          confidence: 0.2
+
+  - text: Correlating with recent changes and reading the crashed container's last output.
+    tool_calls:
+      - name: k8s_rollout_history
+        input: {namespace: demo, deployment: checkout}
+        expect: [deploy v2, 2O]
+      - name: recent_deploys
+        input: {namespace: demo, minutes: 120}
+        expect: [checkout]
+      - name: k8s_pod_logs
+        input: {namespace: demo, deployment: checkout, previous: true, tail_lines: 20}
+        expect: [invalid configuration, DB_POOL_SIZE]
+
+  - text: >-
+      The crashed instance logs a configuration parse error. Checking that the error is
+      consistent across restarts, and ruling out OOM and capacity issues.
+    tool_calls:
+      - name: loki_query
+        input: {namespace: demo, app: checkout, contains: invalid configuration, minutes: 30, limit: 20}
+        expect: [DB_POOL_SIZE]
+      - name: prometheus_query
+        input:
+          query: 'kube_pod_container_status_last_terminated_reason{namespace="demo", reason="OOMKilled"} == 1'
+        expect: ['"series_count": 0']
+      - name: k8s_describe
+        input: {namespace: demo, kind: deployment, name: checkout}
+        expect: ['"available": 2']
+
+  - text: Updating hypotheses with the evidence and pulling the runbook.
+    tool_calls:
+      - name: update_hypothesis
+        input:
+          id: H1
+          status: supported
+          confidence: 0.93
+          evidence_ids: [E1, E4, E6, E7]
+          notes: The "deploy v2" revision sets DB_POOL_SIZE=2O; every crashed instance exits on int() parsing of that value.
+      - name: update_hypothesis
+        input:
+          id: H2
+          status: ruled_out
+          confidence: 0.02
+          evidence_ids: [E1, E8]
+          notes: No OOMKilled terminations; containers exit with code 1, not 137.
+      - name: update_hypothesis
+        input:
+          id: H3
+          status: ruled_out
+          confidence: 0.03
+          evidence_ids: [E6, E7]
+          notes: The process exits during config validation, before any connection attempt.
+      - name: runbook_search
+        input: {query: CrashLoopBackOff after rollout bad config rollback, k: 2}
+        expect: [crashloopbackoff.md]
+
+  - text: >-
+      The runbook prefers a rollback over a restart for a bad change (a restart would recreate
+      pods from the same broken template). Proposing a rollback to the previous revision.
+    tool_calls:
+      - name: propose_rollback
+        input:
+          namespace: demo
+          deployment: checkout
+          reason: >-
+            The "deploy v2" revision introduced DB_POOL_SIZE=2O, which fails integer parsing and
+            crash-loops every new pod (E4, E6, E7). The previous revision is still serving. Rolling
+            back restores the last known-good template.
+        expect: [server-side dry run OK]
+
+  - text: Submitting the report.
+    tool_calls:
+      - name: submit_report
+        input:
+          title: checkout v2 rollout crash-loops on invalid DB_POOL_SIZE
+          severity: SEV2
+          summary: >-
+            The checkout rollout "deploy v2: tune DB connection pool" set
+            DB_POOL_SIZE to "2O" (letter O instead of zero). The service parses this value with
+            int() at startup, logs "invalid configuration" and exits with code 1, so every pod of
+            the new ReplicaSet enters CrashLoopBackOff and the rollout is stuck.
+          impact: >-
+            Degraded, not down: with maxUnavailable=0 the previous revision's pods keep serving (2/2 available, E9), but the
+            deployment runs without surge capacity, the rollout is blocked, and any scale-up or
+            node drain would schedule pods from the broken template.
+          timeline:
+            - {time: T0, event: 'Rollout of "deploy v2: tune DB connection pool (DB_POOL_SIZE=2O)"', evidence_ids: [E4, E5]}
+            - {time: T0 + seconds, event: New pod exits on startup with "invalid configuration" for DB_POOL_SIZE='2O', evidence_ids: [E6, E7]}
+            - {time: T0 + ~1m, event: Pod enters CrashLoopBackOff; BackOff events; KubePodCrashLooping fires, evidence_ids: [E1, E2, E3]}
+            - {time: T0 + ~2m, event: Rollback to the previous (serving) revision proposed after a server-side dry run; awaiting approval, evidence_ids: []}
+          root_cause:
+            hypothesis: Invalid configuration value DB_POOL_SIZE=2O shipped in the checkout "deploy v2" rollout
+            confidence: 0.93
+            reasoning: >-
+              Only pods from the newest ReplicaSet crash (E1). The single change in that revision is
+              the DB_POOL_SIZE value (E4). The previous container instance logs an int() parse
+              failure for exactly that key before exiting (E6), consistently across restarts (E7).
+              OOM was ruled out (E8) and the dependency hypothesis is inconsistent with the process
+              exiting before any connection attempt.
+            evidence_ids: [E1, E4, E6, E7, E8]
+          remediation:
+            - {step: Approve the rollback of deployment/checkout to the last healthy revision, proposal_id: '{{proposal:0}}', risk: low}
+            - {step: Confirm the rollout completes and restart counts stop increasing; KubePodCrashLooping should resolve, risk: low}
+            - {step: Fix the value to 20 in the config source and redeploy through CI, risk: low}
+          runbook_refs: [runbooks/crashloopbackoff.md]
+          follow_ups:
+            - Validate service configuration (types and ranges) in CI before deploy.
+            - Add a startup smoke check to the deploy pipeline so a crash-looping revision is halted automatically.
